@@ -1,0 +1,29 @@
+/** clothingstore:
+Hoodie (1)
+Blazer (2)
+Coat (3)
+Dress (4)
+Jacket(5)
+Jeans (6)
+Overcoat (7)
+Parka (8)
+Pullover(9)
+Shirt (10)
+Shorts (11)
+Sweatshirt (12)
+Tops (13)
+Uniforms (14)
+Blouse (15)
+**/
+
+CREATE TABLE clothingstore (id INTEGER PRIMARY KEY, name text, price  INTEGER, material INTEGER, season INTEGER );
+INSERT INTO clothingstore VALUES (1, "hoodie",50,1,2011);
+INSERT INTO clothingstore VALUES (2, "Blazer",100,2,2011);
+INSERT INTO clothingstore VALUES (3, "Coat",150,1,2011);
+INSERT INTO clothingstore VALUES (4, "Dress",125,2,2011);
+INSERT INTO clothingstore VALUES (5, "Jacket",120,1,2011);
+SELECT * FROM clothingstore WHERE price 
+
+
+--display the database by price.
+
