@@ -1,0 +1,152 @@
+-- Show Customers (their full names, customer ID, and country) who are not in the US.
+SELECT FirstName, LastName, CustomerId, Country 
+FROM chinook.customers 
+WHERE Country <> 'USA';
+
+-- Show only the Customers from Brazil.
+SELECT firstname, lastname
+FROM chinook.customers
+WHERE country = 'Brazil';
+
+-- Find the Invoices of customers who are from Brazil. The resulting table should show the customer's full name, Invoice ID, date of the invoice, and billing country.
+SELECT cust.firstname, cust.lastname, inv.invoiceid, inv.invoicedate, inv.billingcountry 
+FROM chinook.invoices inv
+LEFT JOIN chinook.customers cust ON cust.customerid = inv.invoiceid
+WHERE inv.billingcountry = 'Brazil';
+
+-- Show the Employees who are Sales Agents.
+SELECT *
+FROM chinook.employees
+WHERE title LIKE '%sales%' AND title LIKE '%agent%';
+
+-- Find a unique/distinct list of billing countries from the Invoice table.
+SELECT DISTINCT billingcountry
+FROM chinook.invoices;
+
+-- Provide a query that shows the invoices associated with each sales agent. The resulting table should include the Sales Agent's full name.
+SELECT emp.firstname, emp.lastname, inv.InvoiceId
+FROM chinook.employees emp
+JOIN chinook.customers cust ON cust.supportrepid = emp.employeeid
+JOIN chinook.invoices inv ON inv.customerid = cust.customerid;
+
+-- Show the Invoice Total, Customer name, Country, and Sales Agent name for all invoices and customers.
+SELECT cust.firstname AS custfirstname, cust.lastname AS custlastname, cust.country, inv.total AS invtotal, emp.firstname AS agentfirstname, emp.lastname AS agentlastname
+FROM chinook.employees emp
+JOIN chinook.customers cust
+ON cust.supportrepid = emp.employeeid
+JOIN chinook.invoices inv
+ON inv.customerid = cust.customerid;
+
+-- How many Invoices were there in 2009?
+SELECT COUNT(invoicedate) AS '2009 Invoices'
+FROM chinook.invoices
+WHERE invoicedate BETWEEN '2009-01-01' AND '2009-12-31';
+
+-- What are the total sales for 2009?
+SELECT SUM(total) AS '2009 Sales'
+FROM chinook.invoices
+WHERE invoicedate BETWEEN '2009-01-01' AND '2009-12-31';
+
+-- Write a query that includes the purchased track name AND artist name with each invoice line ID.
+SELECT art.name AS Artist, tracks.name AS Track, inv.invoicelineid
+FROM chinook.invoice_items inv
+LEFT JOIN chinook.tracks tracks ON inv.trackid = tracks.trackid
+INNER JOIN chinook.albums alb ON tracks.albumid = alb.albumid
+LEFT JOIN chinook.artists art ON art.artistid = alb.artistid
+ORDER BY artist;
+
+-- Provide a query that shows all the Tracks, and include the Album name, Media type, and Genre.
+SELECT tracks.name AS 'Track', alb.title AS 'Album', med.name AS 'Media Type', gen.name AS 'Genre'
+FROM chinook.tracks tracks
+JOIN chinook.albums alb ON tracks.albumid = alb.albumid
+JOIN chinook.media_types med ON tracks.mediatypeid = med.MediaTypeId
+JOIN chinook.genres gen ON tracks.genreid = gen.genreid
+ORDER BY tracks.name ASC;
+
+-- Show the total sales made by each sales agent.
+SELECT emp.firstname AS 'Agent First Name', emp.lastname AS 'Agent Last Name', ROUND(SUM(items.unitprice) * items.quantity, 2) AS 'Total Sales'
+FROM chinook.employees emp
+INNER JOIN chinook.customers cust ON emp.employeeid = cust.supportrepid
+INNER JOIN chinook.invoices inv ON inv.customerid = cust.customerid
+OUTER JOIN chinook.invoice_items items ON items.invoiceid = inv.invoiceid
+WHERE emp.title = 'Sales Support Agent'
+GROUP BY emp.firstname;
+
+-- Which sales agent made the most dollars in sales in 2009?
+SELECT emp.firstname AS 'Agent First Name', emp.lastname AS 'Agent Last Name', ROUND(SUM(items.unitprice) * items.quantity, 2) AS 'Total Sales'
+FROM chinook.employees emp
+INNER JOIN chinook.customers cust ON emp.employeeid = cust.supportrepid
+INNER JOIN chinook.invoices inv ON inv.customerid = cust.customerid
+WHERE invoicedate BETWEEN '2009-01-01' AND '2009-12-31'
+GROUP BY emp.firstname, emp.lastname
+ORDER BY SUM(items.unitprice * items.quantity) DESC
+LIMIT 1;
+
+-- List total customers and total combined purchases per country.
+SELECT cust.country, COUNT(cust.customerid) AS 'Total Customers', ROUND(SUM(inv.total), 2) AS 'Total Combined Purchases'
+FROM chinook.customers cust
+JOIN chinook.invoices inv ON cust.customerid = inv.customerid
+GROUP BY cust.country;
+
+Sure! Here are the remaining queries reformatted for GitHub:
+
+```sql
+-- Use a self join to list the employees, their titles, and who they report to. 
+SELECT emp.firstname AS 'Employee First Name', emp.lastname AS 'Employee Last Name', emp.title AS 'Employee Title', boss.firstname AS 'Reports to First Name', boss.lastname AS 'Reports to Last Name', boss.title AS 'Reports to Title' 
+FROM chinook.employees emp
+JOIN chinook.employees boss
+ON emp.reportsto = boss.employeeid;
+
+-- Which city in the United States had the most purchases.
+SELECT billingcity, SUM(total)
+FROM chinook.invoices
+WHERE customerid IN (
+    SELECT customerid
+    FROM chinook.customers
+    WHERE country = 'USA'
+)
+GROUP BY billingcity
+ORDER BY SUM(total) DESC
+LIMIT 1;
+
+-- How many tracks were purchased? (tracks.trackid was used instead of tracks name in case there were tracks by different artists with the same name.)
+SELECT COUNT(DISTINCT tracks.trackid)
+FROM chinook.tracks tracks
+LEFT JOIN chinook.invoice_items inv
+ON tracks.trackid = inv.trackid;
+
+-- Which tracks were purchased more than once and how many times were each purchased?
+SELECT tracks.name, COUNT(*) AS purchases 
+FROM chinook.tracks tracks 
+JOIN chinook.invoice_items items 
+ON tracks.TrackId = items.trackid 
+GROUP BY tracks.name 
+HAVING COUNT(*) > 1;
+
+-- Which year had the least number of sales?
+SELECT DISTINCT SUBSTRING(invoicedate, 1, 4) AS Year, COUNT(SUBSTRING(invoicedate, 1, 4)) AS NumSales
+FROM chinook.invoices
+GROUP BY SUBSTRING(invoicedate, 1, 4)
+ORDER BY NumSales ASC;
+
+-- Show how many tracks are in each genre and include the percentage of tracks in each genre.
+SELECT gen.name, COUNT(tracks.trackid) AS NumTracks, COUNT(tracks.trackid) / CAST(
+    (SELECT COUNT(tracks.trackid) FROM chinook.tracks) AS FLOAT
+) * 100 AS Percentage
+FROM chinook.genres gen
+JOIN chinook.tracks tracks ON gen.genreid = tracks.genreid
+GROUP BY gen.name;
+
+-- Find which state in the United States has the least purchased tracks from the Jazz genre in order to identify which state we should promote Jazz in to increase sales.
+SELECT cust.state, SUM(items.trackid) * quantity AS 'Total Tracks Purchased' 
+FROM chinook.customers cust 
+JOIN chinook.invoices inv ON cust.customerid = inv.customerid 
+JOIN chinook.invoice_items items ON inv.invoiceid = items.invoiceid 
+JOIN chinook.tracks tracks ON items.trackid = tracks.trackid 
+JOIN chinook.genres gen ON tracks.genreid = gen.genreid 
+WHERE gen.name = 'Jazz' 
+GROUP BY cust.state
+ORDER BY SUM(items.trackid) * quantity ASC
+LIMIT 1;
+```
+
